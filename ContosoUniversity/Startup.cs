@@ -1,13 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using ContosoUniversity.Data;
 
 namespace ContosoUniversity
 {
@@ -24,6 +26,19 @@ namespace ContosoUniversity
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
+
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+            {
+                services.AddDbContext<SchoolContext>(options =>
+                        options.UseSqlServer(Configuration.GetConnectionString("SchoolContext")));
+            }
+            else
+            {
+                services.AddDbContext<SchoolContext>(options =>
+                    options.UseSqlite(Configuration.GetConnectionString("SchoolContext")));
+            }
+            
+            services.AddDatabaseDeveloperPageExceptionFilter();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
