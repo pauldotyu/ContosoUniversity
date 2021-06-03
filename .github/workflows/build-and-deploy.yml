@@ -15,11 +15,9 @@ on:
 # This workflow contains multiple jobs to build the app, provision Azure infrastructure and deploy.
 jobs:
   build:
-    name: Build
+    name: dotnet build
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    # Each environment will have its own secrets
-    environment: production
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -46,7 +44,7 @@ jobs:
           path: ${{env.DOTNET_ROOT}}/myapp
 
   terraform:
-    name: Terraform
+    name: terraform apply
     runs-on: ubuntu-latest
     environment: production
     needs: [build]
@@ -63,44 +61,27 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1.2.1
+        uses: hashicorp/setup-terraform@v1
         with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }} # Using TF Cloud for remote state storage but run locally so we'll need to use Azure CLI login context
-          terraform_wrapper: false
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-      # Checks that all Terraform configuration files adhere to a canonical format. If the fmt is bad, the job will fail
-      - name: Terraform Format
-        run: terraform fmt -check
-        continue-on-error: true
-        
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: |
-          export ARM_CLIENT_ID=${{ secrets.ARM_CLIENT_ID }}
-          export ARM_CLIENT_SECRET=${{ secrets.ARM_CLIENT_SECRET }}
-          export ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
-          export ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}
-          terraform init
-        working-directory: terraform
+        run: terraform init
       
-      # Generates an execution plan for Terraform
+      # Checks that all Terraform configuration files adhere to a canonical format
+      - name: Terraform Format
+        run: terraform fmt -check
+        working-directory: terraform
+
+        # Generates an execution plan for Terraform
       - name: Terraform Plan
-        run: |
-          export ARM_CLIENT_ID=${{ secrets.ARM_CLIENT_ID }}
-          export ARM_CLIENT_SECRET=${{ secrets.ARM_CLIENT_SECRET }}
-          export ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
-          export ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}
-          terraform plan -var-file=sample.tfvars -var="username=${{ secrets.MSSQL_USERNAME }}" -var="admin_group_object_ids=${{ secrets.AKS_ADMIN_GROUP_IDS }}" -out=main.tfplan
+        run: terraform plan
         working-directory: terraform
         
       # On push to main, build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          export ARM_CLIENT_ID=${{ secrets.ARM_CLIENT_ID }}
-          export ARM_CLIENT_SECRET=${{ secrets.ARM_CLIENT_SECRET }}
-          export ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
-          export ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}
-          terraform apply -auto-approve main.tfplan
+        run: terraform apply -auto-approve
         working-directory: terraform
