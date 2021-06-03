@@ -95,6 +95,7 @@ jobs:
         with:
           name: acr_name
           path: acr_name.txt
+          working-directory: terraform
 
   docker: 
     name: docker build
