@@ -69,7 +69,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
         working-directory: terraform
-        
+
       # Checks that all Terraform configuration files adhere to a canonical format
       - name: Terraform Format
         run: terraform fmt -check
@@ -84,5 +84,26 @@ jobs:
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve
+        run: |
+          terraform apply -auto-approve
+          $(terraform output -raw acr_name) > acr_name.txt
         working-directory: terraform
+
+      # Upload acr name file
+      - name: Upload ACR name for the next job to use
+        uses: actions/upload-artifact@v2
+        with:
+          name: acr_name
+          path: acr_name.txt
+
+  docker: 
+    name: docker build
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [terraform]
+
+    steps:
+      - name: Download ACR name file
+        uses: actions/download-artifact@v2
+        with:
+          name: acr_name
