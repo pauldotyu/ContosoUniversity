@@ -90,12 +90,11 @@ jobs:
         working-directory: terraform
 
       # Uploads acr name that is stored within a text file for the next job to use
-      - name: Upload ACR name
+      - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: acr_name
-          path: acr_name.txt
-          working-directory: terraform
+          path: terraform/acr_name.txt
 
   docker: 
     name: docker build
