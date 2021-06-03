@@ -86,7 +86,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           terraform apply -auto-approve
-          `terraform output -raw acr_name` > acr_name.txt
+          terraform output -raw acr_name > acr_name.txt
         working-directory: terraform
 
       # Uploads acr name that is stored within a text file for the next job to use
