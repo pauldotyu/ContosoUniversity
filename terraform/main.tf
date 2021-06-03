@@ -69,12 +69,12 @@ resource "azurerm_mssql_firewall_rule" "rule1" {
   end_ip_address   = "0.0.0.0"
 }
 
-resource "azurerm_mssql_firewall_rule" "rule2" {
-  name             = "ClientIP"
-  server_id        = azurerm_mssql_server.cu.id
-  start_ip_address = data.http.ifconfig.body
-  end_ip_address   = data.http.ifconfig.body
-}
+# resource "azurerm_mssql_firewall_rule" "rule2" {
+#   name             = "ClientIP"
+#   server_id        = azurerm_mssql_server.cu.id
+#   start_ip_address = data.http.ifconfig.body
+#   end_ip_address   = data.http.ifconfig.body
+# }
 
 
 resource "azurerm_mssql_database" "cu" {
