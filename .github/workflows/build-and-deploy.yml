@@ -158,3 +158,18 @@ jobs:
         run: |
           echo ${{needs.terraform.outputs.appgw-id}}
           echo ${{needs.terraform.outputs.acr-name}}
+
+  kubernetes: 
+    name: kubectl apply
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [agic, csi, docker]
+
+    defaults:
+      run:
+        shell: bash
+        
+    steps:
+      - name: Simple script
+        run: |
+          echo hello
