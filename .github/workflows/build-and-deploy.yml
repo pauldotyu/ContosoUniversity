@@ -100,8 +100,8 @@ jobs:
         working-directory: terraform
         id: terraform-apply
 
-  aks-addons:
-    name: aks addons
+  agic:
+    name: enable agic
     runs-on: ubuntu-latest
     environment: produciton
     needs: [terraform]
@@ -116,10 +116,31 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Enable AGIC
+      - name: Enable Application Gateway Ingress Controller
         uses: Azure/cli@1.0.4
         with:
           inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a ingress-appgw --appgw-id ${{needs.terraform.outputs.appgw-id}}
+  
+  csi:
+    name: enable csi secret store driver
+    runs-on: ubuntu-latest
+    environment: produciton
+    needs: [terraform]
+    
+    defaults:
+      run:
+        shell: bash
+        
+    steps:
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Enable Secrets Store CSI Driver
+        uses: Azure/cli@1.0.4
+        with:
+          inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a azure-keyvault-secrets-provider --appgw-id ${{needs.terraform.outputs.appgw-id}}
   
   docker: 
     name: docker build
