@@ -141,7 +141,7 @@ jobs:
       - name: Enable Secrets Store CSI Driver
         uses: Azure/cli@1.0.4
         with:
-          inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a azure-keyvault-secrets-provider --appgw-id ${{needs.terraform.outputs.appgw-id}}
+          inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a azure-keyvault-secrets-provider
   
   docker: 
     name: docker build
@@ -156,8 +156,10 @@ jobs:
     steps:
       - name: Simple script
         run: |
-          echo ${{needs.terraform.outputs.appgw-id}}
+          echo ${{needs.terraform.outputs.rg-name}}
+          echo ${{needs.terraform.outputs.aks-name}}
           echo ${{needs.terraform.outputs.acr-name}}
+          echo ${{needs.terraform.outputs.appgw-id}}
 
   kubernetes: 
     name: kubectl apply
