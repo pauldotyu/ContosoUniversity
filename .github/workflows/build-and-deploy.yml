@@ -54,8 +54,10 @@ jobs:
         shell: bash
 
     outputs:
-      appgw-id: ${{ steps.terraform-apply.outputs.appgw-id }}
+      rg-name: ${{ steps.terraform-apply.outputs.rg-name }}
+      aks-name: ${{ steps.terraform-apply.outputs.aks-name }}
       acr-name: ${{ steps.terraform-apply.outputs.acr-name }}
+      appgw-id: ${{ steps.terraform-apply.outputs.appgw-id }}
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -91,11 +93,34 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           terraform apply -auto-approve
-          echo ::set-output name=appgw-id::$(terraform output -raw appgw_id)
+          echo ::set-output name=rg-name::$(terraform output -raw rg_name)
+          echo ::set-output name=aks-name::$(terraform output -raw aks_name)
           echo ::set-output name=acr-name::$(terraform output -raw acr_name)
+          echo ::set-output name=appgw-id::$(terraform output -raw appgw_id)
         working-directory: terraform
         id: terraform-apply
 
+  aks-addons:
+    name: aks addons
+    runs-on: ubuntu-latest
+    environment: produciton
+    needs: [terraform]
+    
+    defaults:
+      run:
+        shell: bash
+        
+    steps:
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Enable AGIC
+        uses: Azure/cli@1.0.4
+        with:
+          inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a ingress-appgw --appgw-id ${{needs.terraform.outputs.appgw-id}}
+  
   docker: 
     name: docker build
     runs-on: ubuntu-latest
@@ -109,5 +134,5 @@ jobs:
     steps:
       - name: Simple script
         run: |
-          echo ${{needs.terraform.outputs.appgw-id}} 
+          echo ${{needs.terraform.outputs.appgw-id}}
           echo ${{needs.terraform.outputs.acr-name}}
