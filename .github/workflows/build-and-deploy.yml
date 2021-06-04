@@ -48,11 +48,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     needs: [build]
-    
+
     defaults:
       run:
         shell: bash
 
+    outputs:
+      appgw-id: ${{ steps.terraform-apply.outputs.appgw-id }}
+      acr-name: ${{ steps.terraform-apply.outputs.acr-name }}
+      
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -86,15 +90,10 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           terraform apply -auto-approve
-          terraform output -raw acr_name | tee acr_name.txt
+          echo ::set-output name=appgw-id::$(terraform output -raw appgw_id)
+          echo ::set-output name=acr-name::$(terraform output -raw acr_name)
         working-directory: terraform
-
-      # Uploads acr name that is stored within a text file for the next job to use
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: acr_name
-          path: terraform/acr_name.txt
+        id: terraform-apply
 
   docker: 
     name: docker build
@@ -102,8 +101,12 @@ jobs:
     environment: production
     needs: [terraform]
 
+    defaults:
+      run:
+        shell: bash
+        
     steps:
-      - name: Download ACR name file
-        uses: actions/download-artifact@v2
-        with:
-          name: acr_name
+      - name: Simple script
+        run: |
+          echo ${{needs.terraform.outputs.appgw-id}} 
+          echo ${{needs.terraform.outputs.acr-name}}
