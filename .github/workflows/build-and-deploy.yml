@@ -101,77 +101,77 @@ jobs:
         working-directory: terraform
         id: terraform-apply
 
-  agic:
-    name: enable agic
-    runs-on: ubuntu-latest
-    environment: production
-    needs: [terraform]
+  # agic:
+  #   name: enable agic
+  #   runs-on: ubuntu-latest
+  #   environment: production
+  #   needs: [terraform]
     
-    defaults:
-      run:
-        shell: bash
+  #   defaults:
+  #     run:
+  #       shell: bash
         
-    steps:
-      - name: Azure Login
-        uses: Azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  #   steps:
+  #     - name: Azure Login
+  #       uses: Azure/login@v1
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Enable Application Gateway Ingress Controller
-        uses: Azure/cli@1.0.4
-        with:
-          inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a ingress-appgw --appgw-id ${{needs.terraform.outputs.appgw-id}}
+  #     - name: Enable Application Gateway Ingress Controller
+  #       uses: Azure/cli@1.0.4
+  #       with:
+  #         inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a ingress-appgw --appgw-id ${{needs.terraform.outputs.appgw-id}}
   
-  csi:
-    name: enable csi secret store driver
-    runs-on: ubuntu-latest
-    environment: production
-    needs: [terraform]
+  # csi:
+  #   name: enable csi secret store driver
+  #   runs-on: ubuntu-latest
+  #   environment: production
+  #   needs: [terraform]
     
-    defaults:
-      run:
-        shell: bash
+  #   defaults:
+  #     run:
+  #       shell: bash
         
-    steps:
-      - name: Azure Login
-        uses: Azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  #   steps:
+  #     - name: Azure Login
+  #       uses: Azure/login@v1
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Enable Secrets Store CSI Driver
-        uses: Azure/cli@1.0.4
-        with:
-          inlineScript: az aks enable-addons --addons azure-keyvault-secrets-provider --name ${{needs.terraform.outputs.aks-name}} --resource-group ${{needs.terraform.outputs.rg-name}}
+  #     - name: Enable Secrets Store CSI Driver
+  #       uses: Azure/cli@1.0.4
+  #       with:
+  #         inlineScript: az aks enable-addons --addons azure-keyvault-secrets-provider --name ${{needs.terraform.outputs.aks-name}} --resource-group ${{needs.terraform.outputs.rg-name}}
   
-  docker: 
-    name: docker build
-    runs-on: ubuntu-latest
-    environment: production
-    needs: [terraform]
+  # docker: 
+  #   name: docker build
+  #   runs-on: ubuntu-latest
+  #   environment: production
+  #   needs: [terraform]
 
-    defaults:
-      run:
-        shell: bash
+  #   defaults:
+  #     run:
+  #       shell: bash
         
-    steps:
-      - name: Simple script
-        run: |
-          echo ${{needs.terraform.outputs.rg-name}}
-          echo ${{needs.terraform.outputs.aks-name}}
-          echo ${{needs.terraform.outputs.acr-name}}
-          echo ${{needs.terraform.outputs.appgw-id}}
+  #   steps:
+  #     - name: Simple script
+  #       run: |
+  #         echo ${{needs.terraform.outputs.rg-name}}
+  #         echo ${{needs.terraform.outputs.aks-name}}
+  #         echo ${{needs.terraform.outputs.acr-name}}
+  #         echo ${{needs.terraform.outputs.appgw-id}}
 
-  kubernetes: 
-    name: kubectl apply
-    runs-on: ubuntu-latest
-    environment: production
-    needs: [agic, csi, docker]
+  # kubernetes: 
+  #   name: kubectl apply
+  #   runs-on: ubuntu-latest
+  #   environment: production
+  #   needs: [agic, csi, docker]
 
-    defaults:
-      run:
-        shell: bash
+  #   defaults:
+  #     run:
+  #       shell: bash
         
-    steps:
-      - name: Simple script
-        run: |
-          echo hello
+  #   steps:
+  #     - name: Simple script
+  #       run: |
+  #         echo hello
