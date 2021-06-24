@@ -134,7 +134,7 @@ jobs:
 
             # enable azureKeyvaultSecretsProvider aka secrets-store-csi-driver
             csi=$(az aks show -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} --query addonProfiles.azureKeyvaultSecretsProvider.enabled)
-            if [ "$csi" == "false" ]
+            if [ -z "$csi" ] || [ "$csi" == "false" ]
             then
                   echo "addonProfiles.azureKeyvaultSecretsProvider being enabling now..."
                   az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a azure-keyvault-secrets-provider
