@@ -119,122 +119,122 @@ resource "azurerm_subnet" "ag" {
   address_prefixes     = var.snet_agw_address_space
 }
 
-################################
-# AGIC
-################################
+# ################################
+# # AGIC
+# ################################
 
 
-# user assigned managed identity for application gateway
-# resource "azurerm_user_assigned_identity" "ag" {
+# # user assigned managed identity for application gateway
+# # resource "azurerm_user_assigned_identity" "ag" {
+# #   resource_group_name = azurerm_resource_group.cu.name
+# #   location            = azurerm_resource_group.cu.location
+
+# #   name = "agcu${random_pet.cu.id}"
+# # }
+
+# # Grant application gateway get access policy on the key vault
+# # resource "azurerm_key_vault_access_policy" "ag" {
+# #   key_vault_id = azurerm_key_vault.cu.id
+# #   tenant_id    = data.azurerm_client_config.current.tenant_id
+# #   object_id    = azurerm_user_assigned_identity.ag.principal_id
+
+# #   certificate_permissions = [
+# #     "Get",
+# #     "List",
+# #   ]
+
+# #   secret_permissions = [
+# #     "Get",
+# #     "List",
+# #   ]
+
+# #   depends_on = [
+# #     azurerm_key_vault_access_policy.kv_current
+# #   ]
+# # }
+
+# # application gateway
+# resource "azurerm_public_ip" "ag" {
+#   name                = "ag-${random_pet.cu.id}-ip"
+#   location            = azurerm_resource_group.cu.location
+#   resource_group_name = azurerm_resource_group.cu.name
+#   domain_name_label   = "ag${random_pet.cu.id}"
+#   sku                 = "Standard"
+#   allocation_method   = "Static"
+#   zones               = []
+#   timeouts {
+
+#   }
+# }
+
+# resource "azurerm_application_gateway" "ag" {
+#   name                = "ag-${random_pet.cu.id}"
 #   resource_group_name = azurerm_resource_group.cu.name
 #   location            = azurerm_resource_group.cu.location
 
-#   name = "agcu${random_pet.cu.id}"
-# }
+#   backend_address_pool {
+#     name = "appGatewayBackendPool"
+#   }
 
-# Grant application gateway get access policy on the key vault
-# resource "azurerm_key_vault_access_policy" "ag" {
-#   key_vault_id = azurerm_key_vault.cu.id
-#   tenant_id    = data.azurerm_client_config.current.tenant_id
-#   object_id    = azurerm_user_assigned_identity.ag.principal_id
+#   backend_http_settings {
+#     name                  = "appGatewayBackendHttpSettings"
+#     cookie_based_affinity = "Disabled"
+#     port                  = 80
+#     protocol              = "Http"
+#     request_timeout       = 30
+#     connection_draining {
+#       drain_timeout_sec = 1
+#       enabled           = false
+#     }
+#   }
 
-#   certificate_permissions = [
-#     "Get",
-#     "List",
-#   ]
+#   frontend_ip_configuration {
+#     name                 = "appGatewayFrontendIP"
+#     public_ip_address_id = azurerm_public_ip.ag.id
+#   }
 
-#   secret_permissions = [
-#     "Get",
-#     "List",
-#   ]
+#   frontend_port {
+#     name = "appGatewayFrontendPort"
+#     port = 80
+#   }
+
+#   gateway_ip_configuration {
+#     name      = "appGatewayFrontendIP"
+#     subnet_id = azurerm_subnet.ag.id
+#   }
+
+#   http_listener {
+#     name                           = "appGatewayHttpListener"
+#     frontend_port_name             = "appGatewayFrontendPort"
+#     frontend_ip_configuration_name = "appGatewayFrontendIP"
+#     protocol                       = "Http"
+#   }
+
+#   # identity {
+#   #   identity_ids = [
+#   #     azurerm_user_assigned_identity.ag.id
+#   #   ]
+#   #   type = "UserAssigned"
+#   # }
+
+#   request_routing_rule {
+#     name                       = "rule1"
+#     rule_type                  = "Basic"
+#     http_listener_name         = "appGatewayHttpListener"
+#     backend_address_pool_name  = "appGatewayBackendPool"
+#     backend_http_settings_name = "appGatewayBackendHttpSettings"
+#   }
+
+#   sku {
+#     capacity = 2
+#     name     = "WAF_v2"
+#     tier     = "WAF_v2"
+#   }
 
 #   depends_on = [
-#     azurerm_key_vault_access_policy.kv_current
+#     azurerm_key_vault.cu
 #   ]
 # }
-
-# application gateway
-resource "azurerm_public_ip" "ag" {
-  name                = "ag-${random_pet.cu.id}-ip"
-  location            = azurerm_resource_group.cu.location
-  resource_group_name = azurerm_resource_group.cu.name
-  domain_name_label   = "ag${random_pet.cu.id}"
-  sku                 = "Standard"
-  allocation_method   = "Static"
-  zones               = []
-  timeouts {
-
-  }
-}
-
-resource "azurerm_application_gateway" "ag" {
-  name                = "ag-${random_pet.cu.id}"
-  resource_group_name = azurerm_resource_group.cu.name
-  location            = azurerm_resource_group.cu.location
-
-  backend_address_pool {
-    name = "appGatewayBackendPool"
-  }
-
-  backend_http_settings {
-    name                  = "appGatewayBackendHttpSettings"
-    cookie_based_affinity = "Disabled"
-    port                  = 80
-    protocol              = "Http"
-    request_timeout       = 30
-    connection_draining {
-      drain_timeout_sec = 1
-      enabled           = false
-    }
-  }
-
-  frontend_ip_configuration {
-    name                 = "appGatewayFrontendIP"
-    public_ip_address_id = azurerm_public_ip.ag.id
-  }
-
-  frontend_port {
-    name = "appGatewayFrontendPort"
-    port = 80
-  }
-
-  gateway_ip_configuration {
-    name      = "appGatewayFrontendIP"
-    subnet_id = azurerm_subnet.ag.id
-  }
-
-  http_listener {
-    name                           = "appGatewayHttpListener"
-    frontend_port_name             = "appGatewayFrontendPort"
-    frontend_ip_configuration_name = "appGatewayFrontendIP"
-    protocol                       = "Http"
-  }
-
-  # identity {
-  #   identity_ids = [
-  #     azurerm_user_assigned_identity.ag.id
-  #   ]
-  #   type = "UserAssigned"
-  # }
-
-  request_routing_rule {
-    name                       = "rule1"
-    rule_type                  = "Basic"
-    http_listener_name         = "appGatewayHttpListener"
-    backend_address_pool_name  = "appGatewayBackendPool"
-    backend_http_settings_name = "appGatewayBackendHttpSettings"
-  }
-
-  sku {
-    capacity = 2
-    name     = "WAF_v2"
-    tier     = "WAF_v2"
-  }
-
-  depends_on = [
-    azurerm_key_vault.cu
-  ]
-}
 
 ################################
 # AKS
@@ -281,9 +281,9 @@ resource "azurerm_kubernetes_cluster" "cu" {
     }
 
     ingress_application_gateway {
-      enabled = false
+      enabled = true
+      subnet_id = azurerm_subnet.ag.id # this does work
       #gateway_id = azurerm_application_gateway.ag.id # this does not work - when you create an ingress, nothing gets configured on the app gateway
-      #subnet_id = azurerm_subnet.ag.id               # this does work
     }
 
     kube_dashboard {
