@@ -100,7 +100,49 @@ jobs:
           echo ::set-output name=appgw-id::$(terraform output -raw appgw_id)
         working-directory: terraform
         id: terraform-apply
+  
+  csi:
+    name: enable csi secret store driver
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [terraform]
+    
+    defaults:
+      run:
+        shell: bash
+        
+    steps:
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Enable Secrets Store CSI Driver
+        uses: Azure/cli@1.0.4
+        with:
+          inlineScript: |
+            # NOTE THIS IS CURRENTLY IN PREVIEW
+            # register features and providers
+            az provider register --namespace Microsoft.ContainerService
+            az feature register --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
+            az feature register --name AKS-AzureKeyVaultSecretsProvider --namespace Microsoft.ContainerService
+
+            # install the aks-preview extension
+            az extension add --name aks-preview
+            # update the extension to make sure you have the latest version installed
+            az extension update --name aks-preview
+
+            # enable azureKeyvaultSecretsProvider aka secrets-store-csi-driver
+            csi=$(az aks show -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} --query addonProfiles.azureKeyvaultSecretsProvider.enabled)
+            if [ "$csi" == "false" ]
+            then
+                  echo "addonProfiles.azureKeyvaultSecretsProvider being enabling now..."
+                  az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a azure-keyvault-secrets-provider
+            else
+                  echo "addonProfiles.azureKeyvaultSecretsProvider already enabled"
+            fi
+            kubectl get pods -n kube-system -l 'app in (secrets-store-csi-driver, secrets-store-provider-azure)'
+  
   # agic:
   #   name: enable agic
   #   runs-on: ubuntu-latest
@@ -121,27 +163,6 @@ jobs:
   #       uses: Azure/cli@1.0.4
   #       with:
   #         inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a ingress-appgw --appgw-id ${{needs.terraform.outputs.appgw-id}}
-  
-  # csi:
-  #   name: enable csi secret store driver
-  #   runs-on: ubuntu-latest
-  #   environment: production
-  #   needs: [terraform]
-    
-  #   defaults:
-  #     run:
-  #       shell: bash
-        
-  #   steps:
-  #     - name: Azure Login
-  #       uses: Azure/login@v1
-  #       with:
-  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-  #     - name: Enable Secrets Store CSI Driver
-  #       uses: Azure/cli@1.0.4
-  #       with:
-  #         inlineScript: az aks enable-addons --addons azure-keyvault-secrets-provider --name ${{needs.terraform.outputs.aks-name}} --resource-group ${{needs.terraform.outputs.rg-name}}
   
   # docker: 
   #   name: docker build
