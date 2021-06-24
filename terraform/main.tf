@@ -281,7 +281,7 @@ resource "azurerm_kubernetes_cluster" "cu" {
     }
 
     ingress_application_gateway {
-      enabled = true
+      enabled   = true
       subnet_id = azurerm_subnet.ag.id # this does work
       #gateway_id = azurerm_application_gateway.ag.id # this does not work - when you create an ingress, nothing gets configured on the app gateway
     }
