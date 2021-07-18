@@ -141,7 +141,7 @@ jobs:
             else
                   echo "addonProfiles.azureKeyvaultSecretsProvider already enabled"
             fi
-            kubectl get pods -n kube-system -l 'app in (secrets-store-csi-driver, secrets-store-provider-azure)'
+            #kubectl get pods -n kube-system -l 'app in (secrets-store-csi-driver, secrets-store-provider-azure)'
   
   # agic:
   #   name: enable agic
