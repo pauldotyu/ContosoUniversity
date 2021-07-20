@@ -269,6 +269,9 @@ resource "azurerm_kubernetes_cluster" "cu" {
     docker_bridge_cidr = "192.168.0.1/16"
   }
 
+  #private_cluster_enabled = false
+  #private_dns_zone_id = "System"
+
   addon_profile {
     aci_connector_linux {
       enabled = false
