@@ -273,7 +273,7 @@ resource "azurerm_kubernetes_cluster" "cu" {
     }
 
     azure_policy {
-      enabled = false
+      enabled = true
     }
 
     http_application_routing {
