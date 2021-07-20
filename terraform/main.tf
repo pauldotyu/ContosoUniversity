@@ -255,6 +255,8 @@ resource "azurerm_kubernetes_cluster" "cu" {
     vnet_subnet_id = azurerm_subnet.aks.id
   }
 
+  api_server_authorized_ip_ranges = var.authorized_ip_addresses
+
   identity {
     type = "SystemAssigned"
   }
@@ -302,6 +304,7 @@ resource "azurerm_kubernetes_cluster" "cu" {
       managed                = true
       tenant_id              = data.azurerm_client_config.current.tenant_id
       admin_group_object_ids = var.admin_group_object_ids
+      azure_rbac_enabled     = true
     }
   }
 }

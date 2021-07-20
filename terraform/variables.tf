@@ -50,3 +50,7 @@ variable "admin_group_object_ids" {
 variable "tags" {
   type = map(any)
 }
+
+variable "authorized_ip_addresses" {
+  type = list(string)
+}
