@@ -69,14 +69,6 @@ resource "azurerm_mssql_firewall_rule" "rule1" {
   end_ip_address   = "0.0.0.0"
 }
 
-# resource "azurerm_mssql_firewall_rule" "rule2" {
-#   name             = "ClientIP"
-#   server_id        = azurerm_mssql_server.cu.id
-#   start_ip_address = data.http.ifconfig.body
-#   end_ip_address   = data.http.ifconfig.body
-# }
-
-
 resource "azurerm_mssql_database" "cu" {
   name           = "CU"
   server_id      = azurerm_mssql_server.cu.id
@@ -242,7 +234,7 @@ resource "azurerm_subnet" "ag" {
 
 resource "azurerm_kubernetes_cluster" "cu" {
   name                = "aks-${random_pet.cu.id}"
-  kubernetes_version  = var.kubernetes_version # az aks get-versions -l westus2 
+  kubernetes_version  = var.kubernetes_version # az aks get-versions -l westus3
   location            = azurerm_resource_group.cu.location
   resource_group_name = azurerm_resource_group.cu.name
   dns_prefix          = "contosouniversity${random_pet.cu.id}"
@@ -279,6 +271,12 @@ resource "azurerm_kubernetes_cluster" "cu" {
 
     azure_policy {
       enabled = true
+    }
+
+    azure_keyvault_secrets_provider {
+      enabled                  = true
+      secret_rotation_enabled  = true
+      secret_rotation_interval = "10m"
     }
 
     http_application_routing {
