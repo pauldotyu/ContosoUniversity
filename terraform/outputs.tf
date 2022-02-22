@@ -13,3 +13,7 @@ output "acr_name" {
 # output "appgw_id" {
 #   value = azurerm_application_gateway.ag.id
 # }
+
+output "aks_managed_identity_resource_id" {
+  value = azurerm_kubernetes_cluster.cu.kubelet_identity[0].user_assigned_identity_id
+}

@@ -1,10 +1,10 @@
 name: Build and Deploy
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
+    branches: [main]
   #pull_request:
   #  branches: [ main ]
 
@@ -28,7 +28,7 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: "5.0.x"
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
@@ -59,7 +59,7 @@ jobs:
       aks-name: ${{ steps.terraform-apply.outputs.aks-name }}
       acr-name: ${{ steps.terraform-apply.outputs.acr-name }}
       appgw-id: ${{ steps.terraform-apply.outputs.appgw-id }}
-      
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -87,7 +87,7 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
         working-directory: terraform
-        
+
       # On push to main, build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
       - name: Terraform Apply
@@ -100,17 +100,17 @@ jobs:
           #echo ::set-output name=appgw-id::$(terraform output -raw appgw_id)
         working-directory: terraform
         id: terraform-apply
-  
+
   csi:
     name: enable csi secret store driver
     runs-on: ubuntu-latest
     environment: production
     needs: [terraform]
-    
+
     defaults:
       run:
         shell: bash
-        
+
     steps:
       - name: Azure Login
         uses: Azure/login@v1
@@ -121,50 +121,27 @@ jobs:
         uses: Azure/cli@1.0.4
         with:
           inlineScript: |
-            # NOTE THIS IS CURRENTLY IN PREVIEW
-            # register features and providers
+            # AKS Pod Identity enablement
+            # This will be temporary until pod-identity goes GA and added via AKS addon
             az provider register --namespace Microsoft.ContainerService
             az feature register --name EnablePodIdentityPreview --namespace Microsoft.ContainerService
-            az feature register --name AKS-AzureKeyVaultSecretsProvider --namespace Microsoft.ContainerService
 
             # install the aks-preview extension
             az extension add --name aks-preview
             # update the extension to make sure you have the latest version installed
             az extension update --name aks-preview
 
-            # enable azureKeyvaultSecretsProvider aka secrets-store-csi-driver
-            csi=$(az aks show -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} --query addonProfiles.azureKeyvaultSecretsProvider.enabled)
-            if [ -z "$csi" ] || [ "$csi" == "false" ]
+            pod=$(az aks show -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} --query podIdentityProfile.enabled)
+            if [ -z "$pod" ] || [ "$pod" == "false" ]
             then
-                  echo "addonProfiles.azureKeyvaultSecretsProvider being enabling now..."
-                  az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a azure-keyvault-secrets-provider
+              echo "podIdentityProfile being enabling now..."
+              az aks update -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} --enable-pod-identity
+              az aks pod-identity add -g ${{needs.terraform.outputs.rg-name}} --cluster-name ${{needs.terraform.outputs.aks-name}} --namespace cu --name cu-pod-identity --identity-resource-id $(terraform output -raw aks_managed_identity_resource_id)
             else
-                  echo "addonProfiles.azureKeyvaultSecretsProvider already enabled"
+              echo "podIdentityProfile already enabled"
             fi
-            #kubectl get pods -n kube-system -l 'app in (secrets-store-csi-driver, secrets-store-provider-azure)'
-  
-  # agic:
-  #   name: enable agic
-  #   runs-on: ubuntu-latest
-  #   environment: production
-  #   needs: [terraform]
-    
-  #   defaults:
-  #     run:
-  #       shell: bash
-        
-  #   steps:
-  #     - name: Azure Login
-  #       uses: Azure/login@v1
-  #       with:
-  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-  #     - name: Enable Application Gateway Ingress Controller
-  #       uses: Azure/cli@1.0.4
-  #       with:
-  #         inlineScript: az aks enable-addons -n ${{needs.terraform.outputs.aks-name}} -g ${{needs.terraform.outputs.rg-name}} -a ingress-appgw --appgw-id ${{needs.terraform.outputs.appgw-id}}
-
-  # docker: 
+  # docker:
   #   name: docker build
   #   runs-on: ubuntu-latest
   #   environment: production
@@ -173,7 +150,7 @@ jobs:
   #   defaults:
   #     run:
   #       shell: bash
-        
+
   #   steps:
   #     - name: Simple script
   #       run: |
@@ -182,7 +159,7 @@ jobs:
   #         echo ${{needs.terraform.outputs.acr-name}}
   #         echo ${{needs.terraform.outputs.appgw-id}}
 
-  # kubernetes: 
+  # kubernetes:
   #   name: kubectl apply
   #   runs-on: ubuntu-latest
   #   environment: production
@@ -191,7 +168,7 @@ jobs:
   #   defaults:
   #     run:
   #       shell: bash
-        
+
   #   steps:
   #     - name: Simple script
   #       run: |
