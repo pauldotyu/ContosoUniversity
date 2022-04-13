@@ -4,14 +4,14 @@ metadata:
   name: cu-user-full-access
   namespace: cu
 rules:
-- apiGroups: ["", "extensions", "apps"]
-  resources: ["*"]
-  verbs: ["*"]
-- apiGroups: ["batch"]
-  resources:
-  - jobs
-  - cronjobs
-  verbs: ["*"]
+  - apiGroups: ["", "extensions", "apps"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["*"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -23,9 +23,9 @@ roleRef:
   kind: Role
   name: cu-user-full-access
 subjects:
-- kind: Group
-  namespace: cu
-  name: 2634056a-b5e7-4411-8eff-bdaaa3a16273
+  - kind: Group
+    namespace: cu
+    name: 5888443a-ba33-4e36-95f5-3b8eaf15cd5e
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -45,19 +45,19 @@ spec:
         app: contosouniversity
     spec:
       containers:
-      - image: acrcujmaq.azurecr.io/contosouniversity:692
-        name: contosouniversity
-        ports:
-        - containerPort: 80
-        env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: Production
-        - name: ConnectionStrings__SchoolContext
-          valueFrom:
-            secretKeyRef:
-              name: connectionstring
-              key: schoolcontext
-        resources: {}
+        - image: acrcujmaq.azurecr.io/contosouniversity:692
+          name: contosouniversity
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ConnectionStrings__SchoolContext
+              valueFrom:
+                secretKeyRef:
+                  name: connectionstring
+                  key: schoolcontext
+          resources: {}
 ---
 apiVersion: v1
 kind: Service
@@ -66,32 +66,32 @@ metadata:
     app: contosouniversity
   name: contosouniversity-service
 spec:
-  #type: LoadBalancer
+  type: LoadBalancer
   ports:
-  - port: 80
-    #targetPort: 80
+    - port: 80
+      #targetPort: 80
   selector:
     app: contosouniversity
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: contosouniversity-ingress
-  annotations:
-    kubernetes.io/ingress.class: azure/application-gateway
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: contosouniversity-service
-            port:
-              number: 80
-    host: www.contoso.work
-  tls:
-  - hosts:
-    - www.contoso.work
-    secretName: contosouniversity-ingress-tls
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: contosouniversity-ingress
+#   annotations:
+#     kubernetes.io/ingress.class: azure/application-gateway
+# spec:
+#   rules:
+#   - http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: contosouniversity-service
+#             port:
+#               number: 80
+#     host: www.contoso.work
+#   tls:
+#   - hosts:
+#     - www.contoso.work
+#     secretName: contosouniversity-ingress-tls

@@ -3,7 +3,11 @@ provider "azurerm" {
     key_vault {
       purge_soft_delete_on_destroy = false
     }
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
   }
+  subscription_id = var.deployment_subscription_id
 }
 
 data "azurerm_client_config" "current" {}
@@ -233,12 +237,13 @@ resource "azurerm_subnet" "ag" {
 ################################
 
 resource "azurerm_kubernetes_cluster" "cu" {
-  name                = "aks-${random_pet.cu.id}"
-  kubernetes_version  = var.kubernetes_version # az aks get-versions -l westus3
-  location            = azurerm_resource_group.cu.location
-  resource_group_name = azurerm_resource_group.cu.name
-  dns_prefix          = "contosouniversity${random_pet.cu.id}"
-  tags                = merge(var.tags, { "creationSource" = "terraform" })
+  name                              = "aks-${random_pet.cu.id}"
+  kubernetes_version                = var.kubernetes_version # az aks get-versions -l westus3
+  location                          = azurerm_resource_group.cu.location
+  resource_group_name               = azurerm_resource_group.cu.name
+  dns_prefix                        = "contosouniversity${random_pet.cu.id}"
+  role_based_access_control_enabled = true
+  tags                              = merge(var.tags, { "creationSource" = "terraform" })
 
   default_node_pool {
     name           = "default"
@@ -247,7 +252,7 @@ resource "azurerm_kubernetes_cluster" "cu" {
     vnet_subnet_id = azurerm_subnet.aks.id
   }
 
-  api_server_authorized_ip_ranges = var.authorized_ip_addresses
+  # api_server_authorized_ip_ranges = var.authorized_ip_addresses
 
   identity {
     type = "SystemAssigned"
@@ -255,7 +260,7 @@ resource "azurerm_kubernetes_cluster" "cu" {
 
   network_profile {
     network_plugin     = "azure"
-    load_balancer_sku  = "Standard"
+    load_balancer_sku  = "standard"
     service_cidr       = "10.255.0.0/24"
     dns_service_ip     = "10.255.0.10"
     docker_bridge_cidr = "192.168.0.1/16"
@@ -264,49 +269,27 @@ resource "azurerm_kubernetes_cluster" "cu" {
   #private_cluster_enabled = false
   #private_dns_zone_id = "System"
 
-  addon_profile {
-    aci_connector_linux {
-      enabled = false
-    }
-
-    azure_policy {
-      enabled = true
-    }
-
-    azure_keyvault_secrets_provider {
-      enabled                  = true
-      secret_rotation_enabled  = true
-      secret_rotation_interval = "10m"
-    }
-
-    http_application_routing {
-      enabled = false
-    }
-
-    ingress_application_gateway {
-      enabled   = true
-      subnet_id = azurerm_subnet.ag.id # this does work
-      #gateway_id = azurerm_application_gateway.ag.id # this does not work - when you create an ingress, nothing gets configured on the app gateway
-    }
-
-    kube_dashboard {
-      enabled = false
-    }
-
-    oms_agent {
-      enabled                    = true
-      log_analytics_workspace_id = azurerm_log_analytics_workspace.cu.id
-    }
+  key_vault_secrets_provider {
+    secret_rotation_enabled  = true
+    secret_rotation_interval = "10m"
   }
 
-  role_based_access_control {
-    enabled = true
-    azure_active_directory {
-      managed                = true
-      tenant_id              = data.azurerm_client_config.current.tenant_id
-      admin_group_object_ids = var.admin_group_object_ids
-      azure_rbac_enabled     = true
-    }
+  ingress_application_gateway {
+    subnet_id = azurerm_subnet.ag.id # this does work
+    #gateway_id = azurerm_application_gateway.ag.id # this does not work - when you create an ingress, nothing gets configured on the app gateway
+  }
+
+
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.cu.id
+  }
+
+  azure_active_directory_role_based_access_control {
+
+    managed                = true
+    tenant_id              = data.azurerm_client_config.current.tenant_id
+    admin_group_object_ids = var.admin_group_object_ids
+    azure_rbac_enabled     = true
   }
 }
 
@@ -363,66 +346,66 @@ resource "azurerm_key_vault_access_policy" "kv_current" {
   object_id    = data.azurerm_client_config.current.object_id
 
   certificate_permissions = [
-    "backup",
-    "create",
-    "delete",
-    "deleteissuers",
-    "get",
-    "getissuers",
-    "import",
-    "list",
-    "listissuers",
-    "managecontacts",
-    "manageissuers",
-    "purge",
-    "recover",
-    "restore",
-    "setissuers",
-    "update"
+    "Backup",
+    "Create",
+    "Delete",
+    "DeleteIssuers",
+    "Get",
+    "GetIssuers",
+    "Import",
+    "List",
+    "ListIssuers",
+    "ManageContacts",
+    "ManageIssuers",
+    "Purge",
+    "Recover",
+    "Restore",
+    "SetIssuers",
+    "Update"
   ]
   key_permissions = [
-    "backup",
-    "create",
-    "decrypt",
-    "delete",
-    "encrypt",
-    "get",
-    "import",
-    "list",
-    "purge",
-    "recover",
-    "restore",
-    "sign",
-    "unwrapKey",
-    "update",
-    "verify",
-    "wrapKey"
+    "Backup",
+    "Create",
+    "Decrypt",
+    "Delete",
+    "Encrypt",
+    "Get",
+    "Import",
+    "List",
+    "Purge",
+    "Recover",
+    "Restore",
+    "Sign",
+    "UnwrapKey",
+    "Update",
+    "Verify",
+    "WrapKey"
   ]
   secret_permissions = [
-    "backup",
-    "delete",
-    "get",
-    "list",
-    "purge",
-    "recover",
-    "restore",
-    "set"
+    "Backup",
+    "Delete",
+    "Get",
+    "List",
+    "Purge",
+    "Recover",
+    "Restore",
+    "Set"
   ]
   storage_permissions = [
-    "backup",
-    "delete",
-    "deletesas",
-    "get",
-    "getsas",
-    "list",
-    "listsas",
-    "purge",
-    "recover",
-    "regeneratekey",
-    "restore",
-    "set",
-    "setsas",
-    "update"
+    "Backup",
+    "Delete",
+    "DeleteSAS",
+    "Get",
+    "GetSAS",
+    "List",
+    "ListSAS",
+    "Purge",
+    "Recover",
+    "RegenerateKey",
+    "Restore",
+    "Set",
+    "SetSAS",
+    "Update"
   ]
 
   depends_on = [
@@ -435,9 +418,9 @@ resource "azurerm_key_vault_access_policy" "aks_system" {
   key_vault_id            = azurerm_key_vault.cu.id
   tenant_id               = azurerm_kubernetes_cluster.cu.identity[0].tenant_id
   object_id               = azurerm_kubernetes_cluster.cu.identity[0].principal_id
-  certificate_permissions = ["get"]
-  secret_permissions      = ["get"]
-  key_permissions         = ["get"]
+  certificate_permissions = ["Get"]
+  secret_permissions      = ["Get"]
+  key_permissions         = ["Get"]
 
   depends_on = [
     azurerm_key_vault_access_policy.kv_current
@@ -449,9 +432,9 @@ resource "azurerm_key_vault_access_policy" "aks_kublet" {
   key_vault_id            = azurerm_key_vault.cu.id
   tenant_id               = azurerm_kubernetes_cluster.cu.identity[0].tenant_id
   object_id               = azurerm_kubernetes_cluster.cu.kubelet_identity[0].object_id
-  certificate_permissions = ["get"]
-  secret_permissions      = ["get"]
-  key_permissions         = ["get"]
+  certificate_permissions = ["Get"]
+  secret_permissions      = ["Get"]
+  key_permissions         = ["Get"]
 
   depends_on = [
     azurerm_key_vault_access_policy.kv_current
